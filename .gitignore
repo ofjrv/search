@@ -1,0 +1,12 @@
+# 파이썬
+__pycache__/
+*.pyc
+backend/.venv/
+backend/db.sqlite3
+backend/staticfiles/
+.env
+
+# 프론트엔드
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
