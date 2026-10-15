@@ -56,3 +56,42 @@ class SecurityTests(TestCase):
         self.assertEqual(self.login("wrong").status_code, 429)  # 5번째에 잠김
         # 잠긴 동안은 맞는 비밀번호도 막힘
         self.assertEqual(self.login("correct-horse-battery").status_code, 429)
+
+
+class EnsureSuperuserTests(TestCase):
+    def run_cmd(self, **env):
+        import os
+        from io import StringIO
+        from unittest import mock
+
+        from django.core.management import call_command
+
+        out, err = StringIO(), StringIO()
+        keys = ["DJANGO_SUPERUSER_USERNAME", "DJANGO_SUPERUSER_PASSWORD", "DJANGO_SUPERUSER_EMAIL"]
+        clean = {k: v for k, v in os.environ.items() if k not in keys}
+        with mock.patch.dict(os.environ, {**clean, **env}, clear=True):
+            call_command("ensure_superuser", stdout=out, stderr=err)
+        return out.getvalue(), err.getvalue()
+
+    def test_creates_then_resets(self):
+        from django.contrib.auth.models import User
+
+        out, _ = self.run_cmd(DJANGO_SUPERUSER_USERNAME="teacher", DJANGO_SUPERUSER_PASSWORD="first-Pass-123")
+        self.assertIn("Superuser ready: teacher", out)
+        self.assertNotIn("first-Pass-123", out)
+
+        # 권한을 뺏고 비밀번호를 바꾼 뒤 다시 실행하면 복구
+        User.objects.filter(username="teacher").update(is_staff=False, is_superuser=False)
+        out, _ = self.run_cmd(DJANGO_SUPERUSER_USERNAME="teacher", DJANGO_SUPERUSER_PASSWORD="second-Pass-456")
+        self.assertNotIn("second-Pass-456", out)
+        user = User.objects.get(username="teacher")
+        self.assertTrue(user.is_staff and user.is_superuser)
+        self.assertTrue(user.check_password("second-Pass-456"))
+        self.assertEqual(User.objects.count(), 1)
+
+    def test_missing_env_only_warns(self):
+        from django.contrib.auth.models import User
+
+        out, err = self.run_cmd()
+        self.assertIn("경고", err)
+        self.assertEqual(User.objects.count(), 0)

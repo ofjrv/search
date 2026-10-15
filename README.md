@@ -32,7 +32,7 @@ python manage.py runserver
 - API: http://127.0.0.1:8000/api/creatures/
 - 관리자: http://127.0.0.1:8000/teacher-mukgi-2026/ (개발용 기본 주소, `/admin/`은 404)
 
-> 내 컴퓨터용 개발 계정(`admin` / `mukbang-dev-1234`)은 **내 컴퓨터의 SQLite에서만** 씁니다.
+> 내 컴퓨터에서 `createsuperuser`로 만든 개발용 계정은 **내 컴퓨터의 SQLite에서만** 씁니다.
 > 배포 서버에는 절대 만들지 마세요. (아래 [6. 보안](#6-보안-학생이-운영자-화면을-찾지-못하게) 참고)
 
 ### 프론트엔드 (터미널 2)
@@ -121,7 +121,15 @@ http://127.0.0.1:8000/teacher-mukgi-2026/ → **생물** (배포 서버에서는
 | Build Command | `./build.sh` |
 | Start Command | `gunicorn config.wsgi:application` |
 
-`build.sh`는 패키지 설치 → `collectstatic`(whitenoise가 admin 화면 CSS를 제공) → `migrate` → CSV 불러오기를 차례로 합니다.
+`build.sh`는 아래 순서로 실행됩니다.
+
+1. 패키지 설치
+2. `collectstatic`: whitenoise가 admin 화면 CSS를 제공
+3. `migrate`
+4. `ensure_superuser`: 환경변수로 관리자 계정을 만들거나 비밀번호·권한을 다시 맞춤
+5. `axes_reset`: 로그인 잠금 풀기
+6. CSV 불러오기
+
 (실행 권한 오류가 나면 Build Command를 `bash build.sh`로 바꾸세요.)
 
 **Environment** 탭에 환경변수를 넣습니다.
@@ -135,16 +143,25 @@ http://127.0.0.1:8000/teacher-mukgi-2026/ → **생물** (배포 서버에서는
 | `ALLOWED_HOSTS` | `mukbang-api.onrender.com` | 백엔드 주소(https:// 없이). Render 기본 주소는 자동으로 추가됨 |
 | `CORS_ALLOWED_ORIGINS` | `https://mukbang.onrender.com` | 프론트엔드 주소. 여러 개면 쉼표로 구분, 끝에 `/` 없이 |
 | `CSRF_TRUSTED_ORIGINS` | `https://mukbang-api.onrender.com` | 관리자 로그인용 (백엔드 주소, https:// 포함) |
+| `DJANGO_SUPERUSER_USERNAME` | `teacher` | 관리자 아이디 |
+| `DJANGO_SUPERUSER_PASSWORD` | (직접 정한 강한 비밀번호) | 관리자 비밀번호. **Render 환경변수에만** 넣기 |
+| `DJANGO_SUPERUSER_EMAIL` | (선택) | 관리자 이메일 |
 | `PYTHON_VERSION` | `3.13.3` | 선택 |
 
-배포가 끝나면 **Shell** 탭에서 관리자 계정을 **새로** 만듭니다.
+### 관리자 계정
 
-```bash
-python manage.py createsuperuser
-```
+관리자 계정은 빌드할 때 `python manage.py ensure_superuser`가 위 `DJANGO_SUPERUSER_*` 환경변수로 자동으로 만듭니다.
 
-- 개발용 계정(`admin` / `mukbang-dev-1234`)은 배포 서버에 **만들지 마세요.** 이 비밀번호는 README와 대화 기록에 남아 있어 안전하지 않습니다.
-- 아이디는 `admin`처럼 흔한 이름을 피하고, 비밀번호는 **12자 이상**으로 다른 사이트에서 쓰지 않는 것으로 정하세요.
+- 계정이 없으면 새로 만들고, 이미 있으면 비밀번호를 환경변수 값으로 다시 맞추고 관리자 권한을 켭니다.
+- **비밀번호를 바꾸려면** Render 환경변수 `DJANGO_SUPERUSER_PASSWORD`를 바꾸고 다시 배포하면 됩니다. 빌드 때 로그인 잠금도 함께 풀립니다.
+- 환경변수가 비어 있으면 경고만 나오고 빌드는 계속됩니다. 이때는 계정이 만들어지지 않습니다.
+- 빌드 로그에는 비밀번호가 나오지 않고 `Superuser ready: teacher`만 나옵니다.
+
+비밀번호를 정할 때 지킬 것:
+
+- 비밀번호는 코드, README, GitHub 어디에도 적지 말고 **Render 환경변수에만** 넣으세요.
+- 내 컴퓨터에서 쓰는 개발용 계정과 비밀번호를 배포 서버에 쓰지 마세요.
+- 아이디는 `admin`처럼 흔한 이름을 피하세요. 비밀번호는 **12자 이상**으로, 다른 사이트에서 쓰지 않는 것으로 정하세요.
 - 비밀번호는 학교 공용 PC에 저장하지 말고, 담당 선생님만 알고 있도록 합니다.
 
 ### 5-3. 프론트엔드 (Static Site)
@@ -194,7 +211,7 @@ python manage.py createsuperuser
 
 ### 로그인이 잠겼을 때
 
-15분을 기다리거나, Render **Shell** 탭에서 바로 풀 수 있습니다.
+15분을 기다리거나, Render에서 **다시 배포**하면(빌드 때 `axes_reset` 실행) 풀립니다. **Shell** 탭에서 바로 풀 수도 있습니다.
 
 ```bash
 python manage.py axes_reset                       # 잠금 모두 풀기
