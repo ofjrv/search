@@ -1,7 +1,10 @@
+from unittest import mock
+
 from django.conf import settings
 from django.test import TestCase
 
 from .models import Creature
+from .views import CreatureViewSet
 
 
 class CreatureApiTests(TestCase):
@@ -17,6 +20,18 @@ class CreatureApiTests(TestCase):
 
     def test_list_sorted_and_visible_only(self):
         self.assertEqual(self.names("/api/creatures/"), ["개구리", "메뚜기", "청개구리"])
+
+    def test_list_sorted_regardless_of_db_order(self):
+        # DB가 가나다순이 아닌 순서로 돌려줘도(PostgreSQL collation 등) 결과는 가나다순
+        mk = Creature.objects.create
+        for name in ["하늘소", "까치", "나비", "가재", "다람쥐"]:
+            mk(name=name, category="기타", description="d", food="f")
+        reversed_qs = lambda self: Creature.objects.filter(is_visible=True).order_by("-name")
+        with mock.patch.object(CreatureViewSet, "get_queryset", reversed_qs):
+            names = self.names("/api/creatures/")
+        self.assertEqual(
+            names, ["가재", "개구리", "까치", "나비", "다람쥐", "메뚜기", "청개구리", "하늘소"]
+        )
 
     def test_exact_name_first(self):
         self.assertEqual(self.names("/api/creatures/?q=개구리"), ["개구리", "청개구리"])

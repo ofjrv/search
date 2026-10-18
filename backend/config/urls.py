@@ -8,8 +8,8 @@ from creatures.views import CreatureViewSet
 router = DefaultRouter()
 router.register("creatures", CreatureViewSet, basename="creature")
 
-admin.site.site_header = "먹이를 찾아라 관리"
-admin.site.site_title = "먹이를 찾아라 관리"
+admin.site.site_header = "먹이 관계 알아보기 관리"
+admin.site.site_title = "먹이 관계 알아보기 관리"
 
 urlpatterns = [
     # 운영자 주소는 환경변수 ADMIN_PATH로만 정함 (/admin/ 은 404)

@@ -104,31 +104,6 @@ input {
   opacity: 0.7;
 }
 
-/* 빠른 검색 버튼 */
-.quick {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin: 18px 0 28px;
-}
-
-.quick-button {
-  min-height: 52px;
-  padding: 0 22px;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: #2e7d32;
-  background: #e8f5e9;
-  border: 2px solid #a5d6a7;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.quick-button:hover {
-  background: #c8e6c9;
-}
-
 button:focus-visible,
 a:focus-visible {
   outline: 3px solid #1976d2;
@@ -151,10 +126,85 @@ a:focus-visible {
   border: 2px dashed var(--primary);
 }
 
-/* 결과 카드 */
+/* 결과 카드 (검색창 바로 아래) */
 .results {
   display: grid;
   gap: 16px;
+  margin-top: 18px;
+  scroll-margin-top: 12px;
+}
+
+.results:empty {
+  display: none;
+}
+
+/* 분류별 생물 버튼 */
+.chips,
+.chips-message {
+  margin-top: 28px;
+}
+
+.chip-group + .chip-group {
+  margin-top: 20px;
+}
+
+.chip-group-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 48px;
+  max-width: 100%;
+  padding: 6px 18px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #2e7d32;
+  background: #e8f5e9;
+  border: 2px solid #a5d6a7;
+  border-radius: 999px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.chip:hover {
+  background: #c8e6c9;
+}
+
+.chip-selected,
+.chip-selected:hover {
+  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary-dark);
+}
+
+.chips-error-text {
+  margin: 0 0 12px;
+}
+
+.retry-button {
+  min-height: 48px;
+  padding: 0 24px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.retry-button:hover {
+  background: var(--primary-dark);
 }
 
 .card {

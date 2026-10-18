@@ -16,13 +16,19 @@ class CreatureViewSet(viewsets.ReadOnlyModelViewSet):
         return Creature.objects.filter(is_visible=True).order_by("name")
 
     def filter_queryset(self, queryset):
-        q = squash(self.request.query_params.get("q"))
-        if self.action != "list" or not q:
+        if self.action != "list":
             return queryset
+
+        # DB마다 정렬 규칙(collation)이 달라 PostgreSQL에서 가나다순이 깨짐
+        # → 파이썬에서 정렬 (한글 음절은 유니코드 순서가 곧 가나다순)
+        creatures = sorted(queryset, key=lambda c: c.name)
+        q = squash(self.request.query_params.get("q"))
+        if not q:
+            return creatures
 
         # 데이터가 적어서 파이썬에서 공백 제거 후 비교
         matches = []
-        for c in queryset:
+        for c in creatures:
             names = [squash(c.name)] + [squash(a) for a in c.aliases.split(",")]
             if any(q in n for n in names if n):
                 matches.append(c)
